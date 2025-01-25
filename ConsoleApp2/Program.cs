@@ -24,6 +24,7 @@ class Program
                 .Select(kv => ++rank + ": " + kv.Key + " ~ " + kv.Value.Average()));
         
         Console.WriteLine(ranks);
+        Console.ReadLine();
     }
     
     private static void BenchmarkAll(int innerArraySize, Dictionary<string, List<long>> overallResults)

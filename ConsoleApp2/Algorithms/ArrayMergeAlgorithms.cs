@@ -122,15 +122,11 @@ public static class ArrayMergeAlgorithms
         
         byte* sourceByte;
         
-        void* sourceArraysAdress = (void*)(&arrays);
-        
-        object* sourceArray = (object*)sourceArraysAdress;
-             
-        var array = *sourceArray;    
+        var array = ((byte[][])*(object*)(&arrays));    
         
         for (int i = 0; i < arrays.Length; i++)
         {
-            byte[] byteArray = ((byte[][])array)[i];
+            byte[] byteArray = array[i];
             
             var byteArrayHandle = GCHandle.Alloc(byteArray, GCHandleType.Pinned);
             sourceByte = (byte*)byteArrayHandle.AddrOfPinnedObject();
