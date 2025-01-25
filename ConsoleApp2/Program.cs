@@ -9,17 +9,16 @@ class Program
     
     public static void Main(string[] args)
     {
-        byte[][] arrays = new[] {new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0]};
-        
+
         Dictionary<string, List<long>> overallResultDictionary = new Dictionary<string, List<long>>();
         
-        BenchmarkAll(arrays, 30, overallResultDictionary);
-        BenchmarkAll(arrays, 300, overallResultDictionary);
-        BenchmarkAll(arrays, 3000, overallResultDictionary);
-        BenchmarkAll(arrays, 30000, overallResultDictionary);
-        BenchmarkAll(arrays, 300000, overallResultDictionary);
-        BenchmarkAll(arrays, 3000000, overallResultDictionary);
-        BenchmarkAll(arrays, 30000000, overallResultDictionary);
+        BenchmarkAll(30, overallResultDictionary);
+        BenchmarkAll(300, overallResultDictionary);
+        BenchmarkAll(3000, overallResultDictionary);
+        BenchmarkAll(30000, overallResultDictionary);
+        BenchmarkAll(300000, overallResultDictionary);
+        BenchmarkAll(3000000, overallResultDictionary);
+        BenchmarkAll(30000000, overallResultDictionary);
         
         int rank = 0;
         string ranks = string.Join('\n', 
@@ -30,10 +29,10 @@ class Program
         Console.WriteLine(ranks);
     }
     
-    private static void BenchmarkAll(byte[][] arrays, int innerArraySize, Dictionary<string, List<long>> overallResults)
+    private static void BenchmarkAll(int innerArraySize, Dictionary<string, List<long>> overallResults)
     {
         // one set of dummy data for all
-        CreateDummyData(arrays, innerArraySize, Random.Shared);
+        byte[][] arrays = CreateDummyData(innerArraySize, Random.Shared);
         
         Dictionary<string, long> resultDictionary = new Dictionary<string, long>();
 
@@ -56,13 +55,17 @@ class Program
         });
     }
     
-    private static void CreateDummyData(byte[][] arrays, int innerArraySize, Random rnd)
+    private static byte[][] CreateDummyData(int innerArraySize, Random rnd)
     {
+        byte[][] arrays = new[] {new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0]};
+
         for (int i = 0; i < arraysToMerge; i++)
         {
             arrays[i] = new byte[innerArraySize];
             rnd.NextBytes(arrays[i]);
         }
+
+        return arrays;
     }
     
     private static void BenchmarkUnit(Dictionary<string, long> resultDictionary, byte[][] dummyData, int innerArraySize, Func<byte[][], byte[]> testCase)
