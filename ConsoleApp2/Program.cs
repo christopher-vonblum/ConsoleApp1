@@ -21,7 +21,7 @@ class Program
         string ranks = string.Join('\n', 
             overallResultDictionary
                 .OrderBy(kv => kv.Value.Average())
-                .Select(kv => ++rank + ": " + kv.Key + " => " + kv.Value.Average()));
+                .Select(kv => ++rank + ": " + kv.Key + " ~ " + kv.Value.Average()));
         
         Console.WriteLine(ranks);
     }

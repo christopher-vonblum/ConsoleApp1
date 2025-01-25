@@ -1,3 +1,6 @@
+using System.Reflection;
+using System.Runtime.InteropServices;
+
 namespace ConsoleApp2.Algorithms;
 
 public static class ArrayMergeAlgorithms
@@ -111,25 +114,41 @@ public static class ArrayMergeAlgorithms
     public static unsafe byte[] ConcatArraysByteByByteUsingPointers(params byte[][] arrays)
     {
         int overallBytes = arrays.Sum(a => a.Length);
-
+     
         byte[] merged = new byte[overallBytes];
+
+        var mergedHandle = GCHandle.Alloc(merged, GCHandleType.Pinned);
+        byte* targetByte = (byte*)mergedHandle.AddrOfPinnedObject();
         
-        fixed (byte* pointerToTargetByte = &merged[0])
-        {        
-            for (int i = 0; i < arrays.Length; i++)
+        byte* sourceByte;
+        
+        void* sourceArraysAdress = (void*)(&arrays);
+        
+        object* sourceArray = (object*)sourceArraysAdress;
+             
+        var array = *sourceArray;    
+        
+        for (int i = 0; i < arrays.Length; i++)
+        {
+            byte[] byteArray = ((byte[][])array)[i];
+            
+            var byteArrayHandle = GCHandle.Alloc(byteArray, GCHandleType.Pinned);
+            sourceByte = (byte*)byteArrayHandle.AddrOfPinnedObject();
+            
+            for (int b = 0; b < byteArray.Length; b++)
             {
-                int currentLength = arrays[i].Length;
-                fixed (byte* pointerToCurrentSourceByte = &(arrays[i][0]))
-                {
-                    for (int j = 0; j < currentLength; j++)
-                    {
-                        *pointerToTargetByte = *pointerToCurrentSourceByte;
-                        (*pointerToTargetByte)++;
-                        (*pointerToCurrentSourceByte)++;
-                    }                    
-                }
-            }   
-        }    
+                *targetByte = *sourceByte;
+                targetByte++;
+                sourceByte++;                   
+            }
+            
+            byteArrayHandle.Free();
+        }
+        
+        targetByte = null;
+        sourceByte = null;
+        
+        mergedHandle.Free();
         
         return merged;
     }
