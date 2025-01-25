@@ -1,0 +1,169 @@
+﻿// See https://aka.ms/new-console-template for more information
+
+using System.Diagnostics;
+
+class prog
+{
+    private const int innerArraySize = 6000;
+    
+    public static void Main(string[] args)
+    {
+        Random rnd = Random.Shared;
+        byte[][] arrays = new[] {new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0]};
+
+        for (int i = 0; i < 20; i++)
+        {
+            arrays[i] = new byte[innerArraySize];
+            rnd.NextBytes(arrays[i]);
+        }
+        
+        
+        Stopwatch sw = Stopwatch.StartNew();
+
+        byte[] merged = MergeItLinq(arrays);
+        
+        sw.Stop();
+
+        Console.WriteLine(merged.Length == (20 * innerArraySize));
+        
+        Console.WriteLine("linq:" + sw.Elapsed.TotalMicroseconds);
+        
+        
+        sw = Stopwatch.StartNew();
+
+        merged = CallConcatArraysIterator(arrays);
+        
+        sw.Stop();
+        
+        Console.WriteLine(merged.Length == (20 * innerArraySize));
+        
+        Console.WriteLine("iterator+linq:" + sw.Elapsed.TotalMicroseconds);
+        
+        
+        sw = Stopwatch.StartNew();
+
+        merged = FromIterator(arrays);
+        
+        sw.Stop();
+        
+        Console.WriteLine(merged.Length == (20 * innerArraySize));
+        
+        Console.WriteLine("iterator:" + sw.Elapsed.TotalMicroseconds);
+        
+        
+        sw = Stopwatch.StartNew();
+
+        merged = ConcatArrays(arrays);
+        
+        sw.Stop();
+        
+        Console.WriteLine(merged.Length == (20 * innerArraySize));
+        
+        Console.WriteLine("classic:" + sw.Elapsed.TotalMicroseconds);
+        
+        
+        
+        sw = Stopwatch.StartNew();
+
+        merged = ConcatArraysUnsafe(arrays);
+        
+        sw.Stop();
+        
+        Console.WriteLine(merged.Length == (20 * innerArraySize));
+        
+        Console.WriteLine("unsafe:" + sw.Elapsed.TotalMicroseconds);
+    }
+    
+    private static byte[] MergeItLinq(params byte[][] arrays)
+    {
+        IEnumerable<byte> arr = arrays[0];
+
+        foreach (var array in arrays.Skip(1))
+        {
+            arr = arr.Concat(array);
+        }
+        
+        return arr.ToArray();
+    }
+
+    private static byte[] FromIterator(params byte[][] arrays)
+    {
+        var it = ConcatArrysIterator(arrays);
+        
+        int overallBytes = arrays.Sum(a => a.Length);
+
+        byte[] merged = new byte[overallBytes];
+
+        int byteCounter = 0;
+        foreach (byte b in it)
+        {
+            merged[byteCounter] = b;
+            byteCounter++;
+        }
+        
+        return merged;
+    }
+    
+    private static byte[] CallConcatArraysIterator(params byte[][] arrays)
+    {
+        return ConcatArrysIterator(arrays).ToArray();
+    }
+    
+    private static IEnumerable<byte> ConcatArrysIterator(params byte[][] arrays)
+    {
+        for (int i = 0; i < arrays.Length; i++)
+        {
+            byte[] current = arrays[i];
+            for (int j = 0; j < current.Length; j++)
+            {
+                yield return current[j];
+            }
+        }
+    }
+    
+    private static byte[] ConcatArrays(params byte[][] arrays)
+    {
+        int overallBytes = arrays.Sum(a => a.Length);
+
+        byte[] merged = new byte[overallBytes];
+
+        long byteCounter = 0;
+        
+        for (int i = 0; i < arrays.Length; i++)
+        {
+            byte[] current = arrays[i];
+            for (int j = 0; j < current.Length; j++)
+            {
+                merged[byteCounter] = current[j];
+                byteCounter++;
+            }
+        }
+
+        return merged;
+    }
+    
+    private static unsafe byte[] ConcatArraysUnsafe(params byte[][] arrays)
+    {
+        int overallBytes = arrays.Sum(a => a.Length);
+
+        byte[] merged = new byte[overallBytes];
+
+        ulong overallBytesCounter = 0;
+        
+        for (int i = 0; i < arrays.Length; i++)
+        {
+            byte[] current = arrays[i];
+            for (int j = 0; j < current.Length; j++)
+            {
+                fixed (byte* pointerToArray = &merged[overallBytesCounter])
+                {
+                    *pointerToArray = current[j];
+                    (*pointerToArray)++;
+                    overallBytesCounter++;
+                }
+            }
+        }            
+        
+        return merged;
+    }
+}
