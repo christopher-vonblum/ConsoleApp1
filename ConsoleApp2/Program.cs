@@ -4,27 +4,48 @@ using System.Diagnostics;
 
 class prog
 {
-    private const int innerArraySize = 6000;
+    private const int arraysToMerge = 20;
+    private static int innerArraySize = 300;
     
     public static void Main(string[] args)
     {
         Random rnd = Random.Shared;
         byte[][] arrays = new[] {new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0]};
 
-        for (int i = 0; i < 20; i++)
+        for (int i = 0; i < arraysToMerge; i++)
         {
             arrays[i] = new byte[innerArraySize];
             rnd.NextBytes(arrays[i]);
         }
         
+        BenchmarkAll(arrays);
+
+        innerArraySize = 3000;
         
+        BenchmarkAll(arrays);
+
+        innerArraySize = 30000;
+        
+        BenchmarkAll(arrays);
+
+        innerArraySize = 300000;
+        
+        BenchmarkAll(arrays);
+
+        innerArraySize = 3000000;
+        
+        BenchmarkAll(arrays);
+    }
+
+    private static void BenchmarkAll(byte[][] arrays)
+    {
         Stopwatch sw = Stopwatch.StartNew();
 
         byte[] merged = MergeItLinq(arrays);
         
         sw.Stop();
 
-        Console.WriteLine(merged.Length == (20 * innerArraySize));
+        Console.WriteLine(merged.Length == (arraysToMerge * innerArraySize));
         
         Console.WriteLine("linq:" + sw.Elapsed.TotalMicroseconds);
         
@@ -35,7 +56,7 @@ class prog
         
         sw.Stop();
         
-        Console.WriteLine(merged.Length == (20 * innerArraySize));
+        Console.WriteLine(merged.Length == (arraysToMerge * innerArraySize));
         
         Console.WriteLine("iterator+linq:" + sw.Elapsed.TotalMicroseconds);
         
@@ -46,7 +67,7 @@ class prog
         
         sw.Stop();
         
-        Console.WriteLine(merged.Length == (20 * innerArraySize));
+        Console.WriteLine(merged.Length == (arraysToMerge * innerArraySize));
         
         Console.WriteLine("iterator:" + sw.Elapsed.TotalMicroseconds);
         
@@ -57,10 +78,9 @@ class prog
         
         sw.Stop();
         
-        Console.WriteLine(merged.Length == (20 * innerArraySize));
+        Console.WriteLine(merged.Length == (arraysToMerge * innerArraySize));
         
         Console.WriteLine("classic:" + sw.Elapsed.TotalMicroseconds);
-        
         
         
         sw = Stopwatch.StartNew();
@@ -69,11 +89,13 @@ class prog
         
         sw.Stop();
         
-        Console.WriteLine(merged.Length == (20 * innerArraySize));
+        Console.WriteLine(merged.Length == (arraysToMerge * innerArraySize));
         
         Console.WriteLine("unsafe:" + sw.Elapsed.TotalMicroseconds);
+        
+        Console.WriteLine("--------------------------------------------------------");
     }
-    
+
     private static byte[] MergeItLinq(params byte[][] arrays)
     {
         IEnumerable<byte> arr = arrays[0];
@@ -147,22 +169,22 @@ class prog
         int overallBytes = arrays.Sum(a => a.Length);
 
         byte[] merged = new byte[overallBytes];
-
-        ulong overallBytesCounter = 0;
         
-        for (int i = 0; i < arrays.Length; i++)
-        {
-            byte[] current = arrays[i];
-            for (int j = 0; j < current.Length; j++)
+        fixed (byte* pointerToArray = &merged[0])
+        {        
+            for (int i = 0; i < arrays.Length; i++)
             {
-                fixed (byte* pointerToArray = &merged[overallBytesCounter])
+                int currentLength = arrays[i].Length;
+                fixed (byte* currentByteRead = &(arrays[i][0]))
                 {
-                    *pointerToArray = current[j];
-                    (*pointerToArray)++;
-                    overallBytesCounter++;
+                    for (int j = 0; j < currentLength; j++)
+                    {
+                            *pointerToArray = *currentByteRead;
+                            (*pointerToArray)++;
+                    }                    
                 }
-            }
-        }            
+            }   
+        }    
         
         return merged;
     }
