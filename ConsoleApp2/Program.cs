@@ -9,14 +9,7 @@ class Program
     
     public static void Main(string[] args)
     {
-        Random rnd = Random.Shared;
         byte[][] arrays = new[] {new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0],new byte[0]};
-
-        for (int i = 0; i < arraysToMerge; i++)
-        {
-            arrays[i] = new byte[innerArraySize];
-            rnd.NextBytes(arrays[i]);
-        }
         
         BenchmarkAll(arrays);
 
@@ -35,10 +28,29 @@ class Program
         innerArraySize = 3000000;
         
         BenchmarkAll(arrays);
+        
+        innerArraySize = 30000000;
+        
+        BenchmarkAll(arrays);
+    }
+
+    private static void CreateDummyData(byte[][] arrays, Random rnd)
+    {
+        for (int i = 0; i < arraysToMerge; i++)
+        {
+            arrays[i] = new byte[innerArraySize];
+            rnd.NextBytes(arrays[i]);
+        }
     }
 
     private static void BenchmarkAll(byte[][] arrays)
     {
+        // one set of dummy data for all
+        CreateDummyData(arrays, Random.Shared);
+        
+        Dictionary<string, long> resultDictionary = new Dictionary<string, long>();
+        
+        // GOOO
         Console.WriteLine("inner array size:" + innerArraySize);
         
         Stopwatch sw = Stopwatch.StartNew();
@@ -49,9 +61,11 @@ class Program
 
         Console.WriteLine(merged.Length == (arraysToMerge * innerArraySize));
         
-        Console.WriteLine("linq:" + sw.Elapsed.Ticks);
+        Console.WriteLine("linq:" + sw.Elapsed.Ticks.ToString("N0"));
         
+        resultDictionary.Add("linq", sw.Elapsed.Ticks);
         
+        //___________________________________________________________________
         sw = Stopwatch.StartNew();
 
         merged = CallConcatArraysIterator(arrays);
@@ -60,9 +74,11 @@ class Program
         
         Console.WriteLine(merged.Length == (arraysToMerge * innerArraySize));
         
-        Console.WriteLine("iterator+linq:" + sw.Elapsed.Ticks);
+        Console.WriteLine("iterator+linq:" + sw.Elapsed.Ticks.ToString("N0"));
         
+        resultDictionary.Add("iterator+linq", sw.Elapsed.Ticks);
         
+        //___________________________________________________________________
         sw = Stopwatch.StartNew();
 
         merged = FromIterator(arrays);
@@ -71,20 +87,50 @@ class Program
         
         Console.WriteLine(merged.Length == (arraysToMerge * innerArraySize));
         
-        Console.WriteLine("iterator:" + sw.Elapsed.Ticks);
+        Console.WriteLine("iterator:" + sw.Elapsed.Ticks.ToString("N0"));
         
+        resultDictionary.Add("iterator", sw.Elapsed.Ticks);
         
+        //___________________________________________________________________
         sw = Stopwatch.StartNew();
 
-        merged = ConcatArrays(arrays);
+        merged = ConcatArraysUsingCopyTo(arrays);
         
         sw.Stop();
         
         Console.WriteLine(merged.Length == (arraysToMerge * innerArraySize));
         
-        Console.WriteLine("classic:" + sw.Elapsed.Ticks);
+        Console.WriteLine("copyto:" + sw.Elapsed.Ticks.ToString("N0"));
         
+        resultDictionary.Add("copyto", sw.Elapsed.Ticks);
         
+        //___________________________________________________________________
+        sw = Stopwatch.StartNew();
+
+        merged = ConcatArraysByteByByte(arrays);
+        
+        sw.Stop();
+        
+        Console.WriteLine(merged.Length == (arraysToMerge * innerArraySize));
+        
+        Console.WriteLine("bytebybyte:" + sw.Elapsed.Ticks.ToString("N0"));
+        
+        resultDictionary.Add("bytebybyte", sw.Elapsed.Ticks);
+        
+        //___________________________________________________________________
+        sw = Stopwatch.StartNew();
+
+        merged = ConcatArraysUsingListAndRanges(arrays);
+        
+        sw.Stop();
+        
+        Console.WriteLine(merged.Length == (arraysToMerge * innerArraySize));
+        
+        Console.WriteLine("listrangeadd:" + sw.Elapsed.Ticks.ToString("N0"));
+        
+        resultDictionary.Add("listrangeadd", sw.Elapsed.Ticks);
+        
+        //___________________________________________________________________
         sw = Stopwatch.StartNew();
 
         merged = ConcatArraysUnsafe(arrays);
@@ -93,7 +139,13 @@ class Program
         
         Console.WriteLine(merged.Length == (arraysToMerge * innerArraySize));
         
-        Console.WriteLine("unsafe:" + sw.Elapsed.Ticks);
+        Console.WriteLine("unsafebytebybyte:" + sw.Elapsed.Ticks.ToString("N0"));
+        
+        resultDictionary.Add("unsafebytebybyte", sw.Elapsed.Ticks);
+        
+        int rank = 1;
+        string ranks = string.Join('\n', resultDictionary.OrderBy(kv => kv.Value).Select(kv => rank + ": " + kv.Key));
+        Console.WriteLine(ranks);
         
         Console.WriteLine("--------------------------------------------------------");
     }
@@ -144,8 +196,46 @@ class Program
             }
         }
     }
+
+    private static byte[] ConcatArraysUsingListAndRanges(params byte[][] arrays)
+    {
+        int overallBytes = arrays.Sum(a => a.Length);
+
+        List<byte> merged = new List<byte>(overallBytes);
+
+        long byteCounter = 0;
+        
+        for (int i = 0; i < arrays.Length; i++)
+        {
+            byte[] current = arrays[i];
+            
+            merged.AddRange(current);
+        }
+
+        return merged.ToArray();
+    }
     
-    private static byte[] ConcatArrays(params byte[][] arrays)
+    private static byte[] ConcatArraysUsingCopyTo(params byte[][] arrays)
+    {
+        int overallBytes = arrays.Sum(a => a.Length);
+
+        byte[] merged = new byte[overallBytes];
+
+        long byteCounter = 0;
+        
+        for (int i = 0; i < arrays.Length; i++)
+        {
+            byte[] current = arrays[i];
+            
+            current.CopyTo(merged, byteCounter);
+
+            byteCounter += current.Length;
+        }
+
+        return merged;
+    }
+    
+    private static byte[] ConcatArraysByteByByte(params byte[][] arrays)
     {
         int overallBytes = arrays.Sum(a => a.Length);
 
