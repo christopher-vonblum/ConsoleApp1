@@ -36,7 +36,11 @@ class Program
         BenchmarkAll(arrays, overallResultDictionary);
         
         int rank = 0;
-        string ranks = string.Join('\n', overallResultDictionary.OrderByDescending(kv => kv.Value.Average()).Select(kv => ++rank + ": " + kv.Key));
+        string ranks = string.Join('\n', 
+            overallResultDictionary
+                .OrderBy(kv => kv.Value.Average())
+                .Select(kv => ++rank + ": " + kv.Key + " => " + kv.Value.Average()));
+        
         Console.WriteLine(ranks);
     }
 
