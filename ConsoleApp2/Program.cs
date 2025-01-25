@@ -2,7 +2,7 @@
 
 using System.Diagnostics;
 
-class prog
+class Program
 {
     private const int arraysToMerge = 20;
     private static int innerArraySize = 300;
@@ -39,6 +39,8 @@ class prog
 
     private static void BenchmarkAll(byte[][] arrays)
     {
+        Console.WriteLine("inner array size:" + innerArraySize);
+        
         Stopwatch sw = Stopwatch.StartNew();
 
         byte[] merged = MergeItLinq(arrays);
@@ -47,7 +49,7 @@ class prog
 
         Console.WriteLine(merged.Length == (arraysToMerge * innerArraySize));
         
-        Console.WriteLine("linq:" + sw.Elapsed.TotalMicroseconds);
+        Console.WriteLine("linq:" + sw.Elapsed.Ticks);
         
         
         sw = Stopwatch.StartNew();
@@ -58,7 +60,7 @@ class prog
         
         Console.WriteLine(merged.Length == (arraysToMerge * innerArraySize));
         
-        Console.WriteLine("iterator+linq:" + sw.Elapsed.TotalMicroseconds);
+        Console.WriteLine("iterator+linq:" + sw.Elapsed.Ticks);
         
         
         sw = Stopwatch.StartNew();
@@ -69,7 +71,7 @@ class prog
         
         Console.WriteLine(merged.Length == (arraysToMerge * innerArraySize));
         
-        Console.WriteLine("iterator:" + sw.Elapsed.TotalMicroseconds);
+        Console.WriteLine("iterator:" + sw.Elapsed.Ticks);
         
         
         sw = Stopwatch.StartNew();
@@ -80,7 +82,7 @@ class prog
         
         Console.WriteLine(merged.Length == (arraysToMerge * innerArraySize));
         
-        Console.WriteLine("classic:" + sw.Elapsed.TotalMicroseconds);
+        Console.WriteLine("classic:" + sw.Elapsed.Ticks);
         
         
         sw = Stopwatch.StartNew();
@@ -91,7 +93,7 @@ class prog
         
         Console.WriteLine(merged.Length == (arraysToMerge * innerArraySize));
         
-        Console.WriteLine("unsafe:" + sw.Elapsed.TotalMicroseconds);
+        Console.WriteLine("unsafe:" + sw.Elapsed.Ticks);
         
         Console.WriteLine("--------------------------------------------------------");
     }
@@ -170,17 +172,18 @@ class prog
 
         byte[] merged = new byte[overallBytes];
         
-        fixed (byte* pointerToArray = &merged[0])
+        fixed (byte* pointerToTargetByte = &merged[0])
         {        
             for (int i = 0; i < arrays.Length; i++)
             {
                 int currentLength = arrays[i].Length;
-                fixed (byte* currentByteRead = &(arrays[i][0]))
+                fixed (byte* pointerToCurrentSourceByte = &(arrays[i][0]))
                 {
                     for (int j = 0; j < currentLength; j++)
                     {
-                            *pointerToArray = *currentByteRead;
-                            (*pointerToArray)++;
+                        *pointerToTargetByte = *pointerToCurrentSourceByte;
+                        (*pointerToTargetByte)++;
+                        (*pointerToCurrentSourceByte)++;
                     }                    
                 }
             }   
