@@ -9,7 +9,6 @@ class Program
     
     public static void Main(string[] args)
     {
-
         Dictionary<string, List<long>> overallResultDictionary = new Dictionary<string, List<long>>();
         
         BenchmarkAll(30, overallResultDictionary);
